@@ -1,0 +1,19 @@
+{
+  "name": "slack-bot-on-gcp-cloud-functions-sample",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kazuhito-m/slack-bot-on-gcp-cloud-functions-sample.git"
+  },
+  "author": "kazuhito-m",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kazuhito-m/slack-bot-on-gcp-cloud-functions-sample/issues"
+  },
+  "homepage": "https://github.com/kazuhito-m/slack-bot-on-gcp-cloud-functions-sample#readme"
+}

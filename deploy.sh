@@ -1,6 +1,6 @@
 #!/bin/bash
 
-REGION=asia-northeast1
+REGION=asia-northeast2
 
 # kickしたディレクトリから、このスクリプトのあるディレクトリに移動。
 cd $(cd $(dirname $0);pwd)

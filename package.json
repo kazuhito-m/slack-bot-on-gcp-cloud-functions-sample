@@ -15,5 +15,9 @@
   "bugs": {
     "url": "https://github.com/kazuhito-m/slack-bot-on-gcp-cloud-functions-sample/issues"
   },
-  "homepage": "https://github.com/kazuhito-m/slack-bot-on-gcp-cloud-functions-sample#readme"
+  "homepage": "https://github.com/kazuhito-m/slack-bot-on-gcp-cloud-functions-sample#readme",
+  "dependencies": {
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.8"
+  }
 }

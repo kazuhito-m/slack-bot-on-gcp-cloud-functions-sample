@@ -9,3 +9,4 @@ gcloud beta functions deploy slackChoicesBot \
     --runtime nodejs8 \
     --trigger-http \
     --region ${REGION}
+    --env-vars-file .env.yml

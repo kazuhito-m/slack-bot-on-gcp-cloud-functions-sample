@@ -8,5 +8,5 @@ cd $(cd $(dirname $0);pwd)
 gcloud beta functions deploy slackChoicesBot \
     --runtime nodejs8 \
     --trigger-http \
-    --region ${REGION}
+    --region ${REGION} \
     --env-vars-file env.yml

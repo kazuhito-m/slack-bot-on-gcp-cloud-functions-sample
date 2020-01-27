@@ -98,7 +98,7 @@ const onRequest = async (req, res) => {
                     .send('デプロイを取りやめました。');
             }
             const caption =  action.value.replace(/.*true, /, '');
-            const description = `${caption} で、デプロイ依頼を受け付けました。\n結果は各種環境のチャンネルでご確認ください。\n <#hsi-env-prd>`;
+            const description = `${caption} で、デプロイ依頼を受け付けました。\n結果は各種環境のチャンネルでご確認ください。\n <#CPYBX1JLD>`;
             return res.status(200)
                 .send(description);
         }

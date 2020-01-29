@@ -1,4 +1,6 @@
 const request = require('request-promise-native');
+// const { CloudBuildClient } = require('@google-cloud/cloudbuild');
+const gapis = require('googleapis');
 
 async function postMessage(payload) {
     const res = await request.post('https://slack.com/api/chat.postMessage', {
@@ -30,6 +32,78 @@ function createSlackAttachment(message) {
     }
 }
 
+// async function triggeringCloudBuild(projectId, triggerId) {
+//     console.log('triggeringCloudBuild()まで来ました:');
+//     const cb = new CloudBuildClient();
+//     const [resp] = await cb.runBuildTrigger({
+//         projectId,
+//         triggerId,
+//         source: {
+//             projectId: projectId,
+//             dir: './',
+//             branchName: 'master',
+//             substitutions: {
+//                 _PRD_VERSION: "多分無理だと思うけど…これでいけたら奇跡！！うっほほーい！！"
+//             }
+//         },
+//     },{
+//         otherArgs: {
+//            "substitutions": {
+//                 "_PRD_VERSION": "多分無理だと思うけど…これでいけたら奇跡！！うっほほーい！！"
+//             }
+//         }
+//     });
+//     console.info(`triggered build for ${triggerId}`);
+//     const [build] = await resp.promise();
+//     const STATUS_LOOKUP = [
+//         'UNKNOWN',
+//         'Queued',
+//         'Working',
+//         'Success',
+//         'Failure',
+//         'Error',
+//         'Timeout',
+//         'Cancelled',
+//     ];
+//     for (const step of build.steps) {
+//         console.info(
+//             `step:\n\tname: ${step.name}\n\tstatus: ${STATUS_LOOKUP[build.status]}`
+//         );
+//     }
+// }
+
+const triggeringCloudBuild = async (projectId, triggerId) => {
+
+    const authCloudBuild = async () => {
+      const client = await gapis.google.auth.getClient({
+        scopes: ['https://www.googleapis.com/auth/cloud-platform']
+      });
+      return new gapis.cloudbuild_v1.Cloudbuild({ auth: client });
+    }
+  
+    const authedCloudBuild = await authCloudBuild();
+    const runParams = {
+      projectId: projectId,
+      triggerId: triggerId,
+      requestBody: { branchName: 'master' }
+    };
+    const res = await authedCloudBuild.projects.triggers.run(runParams);
+
+
+    // return res.data;
+    console.info(`triggered build for ${triggerId}`);
+    const data = res.data;
+
+    console.info('帰ってきた値のJSON:' + JSON.stringify(data));
+
+    const build = data.metadata.build
+    message = `登録されました。status:${build.status}, id:${build.id}`
+    console.info(message);
+
+    return message;
+}
+  
+
 const onRequest = async (req, res) => {
     let payload = req.body;
     console.log('onRequest()まで来ました。PayLoad:' + payload);
@@ -41,13 +115,16 @@ const onRequest = async (req, res) => {
 
     if (payload.event && payload.event.type === 'app_mention') {
         if (payload.event.text.includes('hi')) {
-            const slackRes = await postMessage({
-                text: `やあ! <@${payload.event.user}> さん。`,
-                channel: payload.event.channel,
-                attachments: [createSlackAttachment('Version(Container Tag)を選択してください。')],
-            });
+            const message = await triggeringCloudBuild(process.env.GCP_PROJECT_NAME, process.env.GCP_CLOUDBUILD_TRIGGER_ID);
             return res.status(200)
-                .json(slackRes);
+                .json(message);
+            // const slackRes = await postMessage({
+            //     text: `やあ! <@${payload.event.user}> さん。`,
+            //     channel: payload.event.channel,
+            //     attachments: [createSlackAttachment('Version(Container Tag)を選択してください。')],
+            // });
+            // return res.status(200)
+            //     .json(slackRes);
         }
     }
 

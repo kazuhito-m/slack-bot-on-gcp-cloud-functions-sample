@@ -83,9 +83,14 @@ const triggeringCloudBuild = async (projectId, triggerId) => {
   
     const authedCloudBuild = await authCloudBuild();
     const runParams = {
-      projectId: projectId,
-      triggerId: triggerId,
-      requestBody: { branchName: 'master' }
+        projectId: projectId,
+        triggerId: triggerId,
+        requestBody: {
+            branchName: 'master',
+            substitutions: {
+                "_PRD_VERSION": "これが届くようなら、変数がとどけられるということ。やったね！"
+            }
+        }
     };
     const res = await authedCloudBuild.projects.triggers.run(runParams);
 

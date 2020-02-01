@@ -1,6 +1,9 @@
 const request = require('request-promise-native');
 // const { CloudBuildClient } = require('@google-cloud/cloudbuild');
 const gapis = require('googleapis');
+const fs = require('fs');
+const execSync = require('child_process').execSync;
+
 
 async function postMessage(payload) {
     const res = await request.post('https://slack.com/api/chat.postMessage', {
@@ -108,6 +111,48 @@ const triggeringCloudBuild = async (projectId, triggerId) => {
     return message;
 }
   
+async function listingImageTags(projectId) {
+    // console.log("環境変数と思しきもの:" + JSON.stringify(process.env));
+    // const client = await gapis.google.auth.getClient({
+    //     scopes: ['https://www.googleapis.com/auth/cloud-platform']
+    // });
+    // fs.readdir('.', function(err, files){
+    //     if (err) throw err;
+    //     const fileList = files.filter(function(file){
+    //         return fs.statSync(file).isFile(); //絞り込み
+    //     })
+    //     console.log('ふぁいるりすと:' + fileList);
+    // });
+
+    // console.log("帰ってきたクライアント/credentials:" + JSON.stringify(client.credentials));
+    // console.log("帰ってきたクライアント/gtoken" + JSON.stringify(client.gtoken));
+    // console.log("帰ってきたクライアント/key" + JSON.stringify(client.key));
+    // console.log("帰ってきたクライアント/keyFile" + JSON.stringify(client.keyFile));
+    // console.log("帰ってきたクライアント/keyId" + JSON.stringify(client.keyId));
+    // console.log("帰ってきたクライアント/apiKey" + JSON.stringify(client.apiKey));
+
+    const url = 'http://metadata.google.internal./computeMetadata/v1/instance/service-accounts/default/token';
+    const json = await request.get(url, {
+        headers: { 'Metadata-Flavor': `Google` },
+    });
+    const resStructure = JSON.parse(json);
+    console.log('res:access_token' + resStructure.access_token);
+
+    const url2 = `https://asia.gcr.io/v2/${projectId}/webapp/tags/list`;
+    const json2 = await request.get(url2, {
+        auth: {
+            username: `_token`,
+            password: resStructure.access_token
+        },
+    });
+    const tags = JSON.parse(json2);
+    console.log('tags:' + json2);
+
+    // Cloud Functionsにはgcloudコマンドがインストルされていない。
+    // const command = 'gcloud container images list-tags asia.gcr.io/projectId/webapp';
+    // const result =  execSync(command);
+    // console.log(result);
+}
 
 const onRequest = async (req, res) => {
     let payload = req.body;
@@ -120,6 +165,7 @@ const onRequest = async (req, res) => {
 
     if (payload.event && payload.event.type === 'app_mention') {
         if (payload.event.text.includes('hi')) {
+            const versions = await listingImageTags(process.env.GCP_PROJECT_NAME);
             const message = await triggeringCloudBuild(process.env.GCP_PROJECT_NAME, process.env.GCP_CLOUDBUILD_TRIGGER_ID);
             return res.status(200)
                 .json(message);

@@ -1,8 +1,5 @@
 const request = require('request-promise-native');
-// const { CloudBuildClient } = require('@google-cloud/cloudbuild');
 const gapis = require('googleapis');
-const fs = require('fs');
-const execSync = require('child_process').execSync;
 
 
 async function postMessage(payload) {
@@ -34,46 +31,6 @@ function createSlackAttachment(message) {
         }],
     }
 }
-
-// async function triggeringCloudBuild(projectId, triggerId) {
-//     console.log('triggeringCloudBuild()まで来ました:');
-//     const cb = new CloudBuildClient();
-//     const [resp] = await cb.runBuildTrigger({
-//         projectId,
-//         triggerId,
-//         source: {
-//             projectId: projectId,
-//             dir: './',
-//             branchName: 'master',
-//             substitutions: {
-//                 _PRD_VERSION: "多分無理だと思うけど…これでいけたら奇跡！！うっほほーい！！"
-//             }
-//         },
-//     },{
-//         otherArgs: {
-//            "substitutions": {
-//                 "_PRD_VERSION": "多分無理だと思うけど…これでいけたら奇跡！！うっほほーい！！"
-//             }
-//         }
-//     });
-//     console.info(`triggered build for ${triggerId}`);
-//     const [build] = await resp.promise();
-//     const STATUS_LOOKUP = [
-//         'UNKNOWN',
-//         'Queued',
-//         'Working',
-//         'Success',
-//         'Failure',
-//         'Error',
-//         'Timeout',
-//         'Cancelled',
-//     ];
-//     for (const step of build.steps) {
-//         console.info(
-//             `step:\n\tname: ${step.name}\n\tstatus: ${STATUS_LOOKUP[build.status]}`
-//         );
-//     }
-// }
 
 const triggeringCloudBuild = async (projectId, triggerId) => {
 
@@ -112,25 +69,6 @@ const triggeringCloudBuild = async (projectId, triggerId) => {
 }
   
 async function listingImageTags(projectId) {
-    // console.log("環境変数と思しきもの:" + JSON.stringify(process.env));
-    // const client = await gapis.google.auth.getClient({
-    //     scopes: ['https://www.googleapis.com/auth/cloud-platform']
-    // });
-    // fs.readdir('.', function(err, files){
-    //     if (err) throw err;
-    //     const fileList = files.filter(function(file){
-    //         return fs.statSync(file).isFile(); //絞り込み
-    //     })
-    //     console.log('ふぁいるりすと:' + fileList);
-    // });
-
-    // console.log("帰ってきたクライアント/credentials:" + JSON.stringify(client.credentials));
-    // console.log("帰ってきたクライアント/gtoken" + JSON.stringify(client.gtoken));
-    // console.log("帰ってきたクライアント/key" + JSON.stringify(client.key));
-    // console.log("帰ってきたクライアント/keyFile" + JSON.stringify(client.keyFile));
-    // console.log("帰ってきたクライアント/keyId" + JSON.stringify(client.keyId));
-    // console.log("帰ってきたクライアント/apiKey" + JSON.stringify(client.apiKey));
-
     const url = 'http://metadata.google.internal./computeMetadata/v1/instance/service-accounts/default/token';
     const json = await request.get(url, {
         headers: { 'Metadata-Flavor': `Google` },
@@ -147,11 +85,6 @@ async function listingImageTags(projectId) {
     });
     const tags = JSON.parse(json2);
     console.log('tags:' + json2);
-
-    // Cloud Functionsにはgcloudコマンドがインストルされていない。
-    // const command = 'gcloud container images list-tags asia.gcr.io/projectId/webapp';
-    // const result =  execSync(command);
-    // console.log(result);
 }
 
 const onRequest = async (req, res) => {

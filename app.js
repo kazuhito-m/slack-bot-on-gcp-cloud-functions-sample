@@ -89,12 +89,20 @@ async function listingImageTags(projectId) {
 
 function tagsOf(containerImagesJson) {
     const manifest = containerImagesJson.manifest;
-    const tags = Object.keys(manifest)
+    const tagLists = Object.keys(manifest)
         .map(key => manifest[key])
         .sort((left, right) => {
             return parseInt(right.timeUploadedMs, 10) -  parseInt(left.timeUploadedMs, 10);
         })
-        .flatMap(i => i.tag.sort((left, right) => right - left))
+        .map(i => i.tag);
+    const tags = [];
+    for (tagList of tagLists) {
+        for (tag of tagList) {
+            tags.push(tag);
+        }
+    }
+    // なぜflatMapが無いのか謎
+    // .flatMap(i => i.tag.sort((left, right) => right - left))
     return tags;
 }
 

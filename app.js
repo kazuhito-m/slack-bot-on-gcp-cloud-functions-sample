@@ -11,13 +11,13 @@ async function postMessage(payload) {
     return res;
 }
 
-function createSlackAttachment(message) {
+function createSlackAttachment(message, versions) {
     console.log('createSlackAttachment()まで来ました:' + message);
-    const choices = [
-        { text: '(キャンセル)', value: 'value:__cancel__' },
-        { text: '0.0.19', value: 'value:0.0.19' },
-        { text: '0.0.18', value: 'value:0.0.18' },
-    ];
+    const choices = versions
+        .map(v => {
+            return { text: v, value:`value:${v}` };
+        });
+    choices.unshift({ text: '(キャンセル)', value: 'value:__cancel__' });
     return {
         text: message,
         fallback: message,
@@ -83,8 +83,19 @@ async function listingImageTags(projectId) {
             password: resStructure.access_token
         },
     });
-    const tags = JSON.parse(json2);
-    console.log('tags:' + json2);
+    const images = JSON.parse(json2);
+    return tagsOf(images);
+}
+
+function tagsOf(containerImagesJson) {
+    const manifest = containerImagesJson.manifest;
+    const tags = Object.keys(manifest)
+        .map(key => manifest[key])
+        .sort((left, right) => {
+            return parseInt(right.timeUploadedMs, 10) -  parseInt(left.timeUploadedMs, 10);
+        })
+        .flatMap(i => i.tag.sort((left, right) => right - left))
+    return tags;
 }
 
 const onRequest = async (req, res) => {
@@ -99,16 +110,16 @@ const onRequest = async (req, res) => {
     if (payload.event && payload.event.type === 'app_mention') {
         if (payload.event.text.includes('hi')) {
             const versions = await listingImageTags(process.env.GCP_PROJECT_NAME);
-            const message = await triggeringCloudBuild(process.env.GCP_PROJECT_NAME, process.env.GCP_CLOUDBUILD_TRIGGER_ID);
-            return res.status(200)
-                .json(message);
-            // const slackRes = await postMessage({
-            //     text: `やあ! <@${payload.event.user}> さん。`,
-            //     channel: payload.event.channel,
-            //     attachments: [createSlackAttachment('Version(Container Tag)を選択してください。')],
-            // });
+            // const message = await triggeringCloudBuild(process.env.GCP_PROJECT_NAME, process.env.GCP_CLOUDBUILD_TRIGGER_ID);
             // return res.status(200)
-            //     .json(slackRes);
+            //     .json(message);
+            const slackRes = await postMessage({
+                text: `やあ! <@${payload.event.user}> さん。`,
+                channel: payload.event.channel,
+                attachments: [createSlackAttachment('Version(Container Tag)を選択してください。', versions)],
+            });
+            return res.status(200)
+                .json(slackRes);
         }
     }
 

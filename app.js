@@ -116,7 +116,7 @@ const onRequest = async (req, res) => {
     }
 
     if (payload.event && payload.event.type === 'app_mention') {
-        const mentsion = payload.envent.text;
+        const mentsion = payload.event.text;
         if (mentsion.includes('設定') && mentsion.includes('本番')) {
             const versions = await listingImageTags(process.env.GCP_PROJECT_NAME);
             const slackRes = await postMessage({

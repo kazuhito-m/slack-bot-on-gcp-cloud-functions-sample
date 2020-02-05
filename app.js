@@ -116,7 +116,8 @@ const onRequest = async (req, res) => {
     }
 
     if (payload.event && payload.event.type === 'app_mention') {
-        if (payload.event.text.includes('hi')) {
+        const mentsion = payload.envent.text;
+        if (mentsion.includes('設定') && mentsion.includes('本番')) {
             const versions = await listingImageTags(process.env.GCP_PROJECT_NAME);
             const slackRes = await postMessage({
                 text: `やあ! <@${payload.event.user}> さん。`,
@@ -140,7 +141,7 @@ const onRequest = async (req, res) => {
                 "text": `<@${payload.user.id}>  環境:production に Version(Tag):"${selectedOption.value}" でデプロイを行います。`,
                 "attachments": [
                     {
-                        "text": "デプロイして良いですか？",
+                        "text": "本番用設定ファイルを書き換えて良いですか？",
                         "fallback": "You are unable to choose a game",
                         "callback_id": "do_deploy",
                         "color": "danger",
@@ -172,14 +173,14 @@ const onRequest = async (req, res) => {
         if (action.name === 'deploy') {
             if (!action.value.startsWith('result:true')) {
                 return res.status(200)
-                    .send('デプロイを取りやめました。');
+                    .send('本番設定の書き換えを取りやめました。');
             }
 
             const targetVersion =  action.value.replace(/.*version:value:/, '');
             await triggeringCloudBuild(process.env.GCP_PROJECT_NAME, process.env.GCP_CLOUDBUILD_TRIGGER_ID, targetVersion);
 
             const caption =  action.value.replace(/.*true, /, '');
-            const description = `${caption} で、デプロイ依頼を受け付けました。\n結果は各種環境のチャンネルでご確認ください。\n <#CPYBX1JLD>`;
+            const description = `${caption} で、本番設定の書き換えを受け付けました。\n結果は各種環境のチャンネルでご確認ください。\n <#CPYBX1JLD>`;
             return res.status(200)
                 .send(description);
         }

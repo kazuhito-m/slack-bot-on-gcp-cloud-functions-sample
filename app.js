@@ -32,7 +32,7 @@ function createSlackAttachment(message, versions) {
     }
 }
 
-const triggeringCloudBuild = async (projectId, triggerId) => {
+const triggeringCloudBuild = async (projectId, triggerId, targetVersion) => {
 
     const authCloudBuild = async () => {
       const client = await gapis.google.auth.getClient({
@@ -48,7 +48,7 @@ const triggeringCloudBuild = async (projectId, triggerId) => {
         requestBody: {
             branchName: 'master',
             substitutions: {
-                "_PRD_VERSION": "これが届くようなら、変数がとどけられるということ。やったね！"
+                "_PRD_VERSION": targetVersion
             }
         }
     };
@@ -118,9 +118,6 @@ const onRequest = async (req, res) => {
     if (payload.event && payload.event.type === 'app_mention') {
         if (payload.event.text.includes('hi')) {
             const versions = await listingImageTags(process.env.GCP_PROJECT_NAME);
-            // const message = await triggeringCloudBuild(process.env.GCP_PROJECT_NAME, process.env.GCP_CLOUDBUILD_TRIGGER_ID);
-            // return res.status(200)
-            //     .json(message);
             const slackRes = await postMessage({
                 text: `やあ! <@${payload.event.user}> さん。`,
                 channel: payload.event.channel,
@@ -177,6 +174,10 @@ const onRequest = async (req, res) => {
                 return res.status(200)
                     .send('デプロイを取りやめました。');
             }
+
+            const targetVersion =  action.value.replace(/.*version:value:/, '');
+            await triggeringCloudBuild(process.env.GCP_PROJECT_NAME, process.env.GCP_CLOUDBUILD_TRIGGER_ID, targetVersion);
+
             const caption =  action.value.replace(/.*true, /, '');
             const description = `${caption} で、デプロイ依頼を受け付けました。\n結果は各種環境のチャンネルでご確認ください。\n <#CPYBX1JLD>`;
             return res.status(200)

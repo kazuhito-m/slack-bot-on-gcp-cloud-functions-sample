@@ -108,7 +108,7 @@ function tagsOf(containerImagesJson) {
 
 const onRequest = async (req, res) => {
     let payload = req.body;
-    console.log('onRequest()まで来ました。PayLoad:' + payload);
+    console.log('onRequest()まで来ました。PayLoad:' + JSON.stringify(payload));
 
     if (payload.type === 'url_verification') {
         return res.status(200)

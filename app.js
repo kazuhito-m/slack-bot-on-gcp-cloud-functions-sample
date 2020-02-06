@@ -108,7 +108,7 @@ function tagsOf(containerImagesJson) {
 
 const onRequest = async (req, res) => {
     let payload = req.body;
-    console.log('onRequest()まで来ました。PayLoad:' + JSON.stringify(payload));
+    console.log('onRequest()まで来ました。');
 
     if (payload.type === 'url_verification') {
         return res.status(200)
@@ -127,21 +127,13 @@ const onRequest = async (req, res) => {
             return res.status(200)
                 .json(slackRes);
         }
-    }
 
-    if (typeof payload.payload === 'string') {
-        payload = JSON.parse(payload.payload)
-    }
-
-    if (payload.type === 'interactive_message') {
-        const action = payload.actions[0];
-        if (action.name === 'choices') {
-            const selectedOption = action.selected_options[0];
+        if (mentsion.includes('設定') && mentsion.includes('デプロイ')) {
             const o = {
-                "text": `<@${payload.user.id}>  環境:production に Version(Tag):"${selectedOption.value}" でデプロイを行います。`,
+                "text": `<@${payload.user.id}>  環境:production に 現在の設定でデプロイを行います。`,
                 "attachments": [
                     {
-                        "text": "本番用設定ファイルを書き換えて良いですか？",
+                        "text": "本番にデプロイしてよろしいですか？",
                         "fallback": "You are unable to choose a game",
                         "callback_id": "do_deploy",
                         "color": "danger",
@@ -151,10 +143,10 @@ const onRequest = async (req, res) => {
                                 "name": "deploy",
                                 "text": "Yes!",
                                 "type": "button",
-                                "value": `result:true, environment: production, version:${selectedOption.value}`
+                                "value": `result:true`
                             },
                             {
-                                "name": "deploy",
+                                "name": "deoploy",
                                 "text": "No.",
                                 "type": "button",
                                 "value": "result:false"
@@ -168,9 +160,87 @@ const onRequest = async (req, res) => {
         }
     }
 
-    if (payload && payload.type === 'interactive_message') {
+    if (typeof payload.payload === 'string') {
+        payload = JSON.parse(payload.payload)
+    }
+
+    if (payload.type === 'interactive_message' && payload.callback_id === 'env_selection') {
+        console.log('Yes/Noに来た時のPayload : ' + JSON.stringify(payload) + ' [終わり]');
         const action = payload.actions[0];
-        if (action.name === 'deploy') {
+        if (action.name === 'choices') {
+            const selectedOption = action.selected_options[0];
+            const o = {
+                "text": `<@${payload.user.id}>  環境:production に Version(Tag):"${selectedOption.value}" でデプロイを行います。`,
+                "attachments": [
+                    {
+                        "text": "本番用設定ファイルを書き換えて良いですか？",
+                        "fallback": "You are unable to choose a game",
+                        "callback_id": "do_rewirte_version_tag",
+                        "color": "danger",
+                        "attachment_type": "default",
+                        "actions": [
+                            {
+                                "name": "rewrite_version_tag",
+                                "text": "Yes!",
+                                "type": "button",
+                                "value": `result:true, environment: production, version:${selectedOption.value}`
+                            },
+                            {
+                                "name": "rewrite_version_tag",
+                                "text": "No.",
+                                "type": "button",
+                                "value": "result:false"
+                            }
+                        ]
+                    }
+                ]
+            }
+            return res.status(200)
+                .json(o);
+        }
+    }
+
+    if (payload.type === 'interactive_message' && payload.callback_id === 'do_deploy') {
+        const action = payload.actions[0];
+
+        if (!action.value.startsWith('result:true')) {
+            return res.status(200)
+                .send('本番設定の書き換えを取りやめました。');
+        }
+
+        const o = {
+            "text": `<@${payload.user.id}>  環境:production に 現在の設定でデプロイを行います。`,
+            "attachments": [
+                {
+                    "text": "本当に？",
+                    "fallback": "You are unable to choose a game",
+                    "callback_id": "confirm_deploy",
+                    "color": "danger",
+                    "attachment_type": "default",
+                    "actions": [
+                        {
+                            "name": "confirm_deploy_yesno",
+                            "text": "Yes!",
+                            "type": "button",
+                            "value": `result:true`
+                        },
+                        {
+                            "name": "confirm_deploy_yesno",
+                            "text": "No.",
+                            "type": "button",
+                            "value": "result:false"
+                        }
+                    ]
+                }
+            ]
+        }
+        return res.status(200)
+            .json(o);
+    }
+
+    if (payload && payload.type === 'interactive_message' && payload.callback_id === 'do_rewirte_version_tag') {
+        const action = payload.actions[0];
+        if (action.name === 'rewrite_version_tag') {
             if (!action.value.startsWith('result:true')) {
                 return res.status(200)
                     .send('本番設定の書き換えを取りやめました。');
@@ -181,6 +251,24 @@ const onRequest = async (req, res) => {
 
             const caption =  action.value.replace(/.*true, /, '');
             const description = `${caption} で、本番設定の書き換えを受け付けました。\n結果は各種環境のチャンネルでご確認ください。\n <#CPYBX1JLD>`;
+            return res.status(200)
+                .send(description);
+        }
+    }
+
+    if (payload && payload.type === 'interactive_message' && payload.callback_id === 'confirm_deploy') {
+        const action = payload.actions[0];
+        if (action.name === 'confirm_deploy_yesno') {
+            if (!action.value.startsWith('result:true')) {
+                return res.status(200)
+                    .send('本番のデプロイを取りやめました。');
+            }
+
+            const targetVersion = 'これが来たなら、デプロイしたってことで♪';
+            await triggeringCloudBuild(process.env.GCP_PROJECT_NAME, process.env.GCP_CLOUDBUILD_TRIGGER_ID, targetVersion);
+
+            const caption =  action.value.replace(/.*true, /, '');
+            const description = `本番のデプロイを受け付けました。\n結果は各種環境のチャンネルでご確認ください。\n <#CPYBX1JLD>`;
             return res.status(200)
                 .send(description);
         }

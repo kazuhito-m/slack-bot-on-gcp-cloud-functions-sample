@@ -117,7 +117,7 @@ const onRequest = async (req, res) => {
 
     if (payload.event && payload.event.type === 'app_mention') {
         const mentsion = payload.event.text;
-        if (mentsion.includes('設定') && mentsion.includes('本番')) {
+        if (mentsion.includes('本番') && mentsion.includes('設定')) {
             const versions = await listingImageTags(process.env.GCP_PROJECT_NAME);
             const slackRes = await postMessage({
                 text: `やあ! <@${payload.event.user}> さん。`,
@@ -128,7 +128,7 @@ const onRequest = async (req, res) => {
                 .json(slackRes);
         }
 
-        if (mentsion.includes('設定') && mentsion.includes('デプロイ')) {
+        if (mentsion.includes('本番') && mentsion.includes('デプロイ')) {
             const o = {
                 "text": `<@${payload.user.id}>  環境:production に 現在の設定でデプロイを行います。`,
                 "attachments": [

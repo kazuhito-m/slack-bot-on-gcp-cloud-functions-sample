@@ -276,7 +276,12 @@ const onRequest = async (req, res) => {
         }
     }
 
-    return res.status(200).send('はい、なんでしょうか？');
+    const slackRes = await postMessage({
+        text: `はい！ <@${payload.event.user}> さん。何かご用でしょうか？`,
+        channel: payload.event.channel
+    });
+    return res.status(200)
+        .json(slackRes);
 };
 
 exports.slackChoicesBot = onRequest;

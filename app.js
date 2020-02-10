@@ -172,7 +172,7 @@ const onRequest = async (req, res) => {
         if (action.name === 'choices') {
             const selectedOption = action.selected_options[0];
 
-            if (selectedOption.includes('__cancel__')) {
+            if (selectedOption.value.includes('__cancel__')) {
                 return res.status(200)
                     .send('本番設定の書き換えを取りやめました。');
             }

@@ -130,7 +130,7 @@ const onRequest = async (req, res) => {
 
         if (mentsion.includes('本番') && mentsion.includes('デプロイ')) {
             const o = {
-                "text": `<@${payload.event.user.id}>  環境:production に 現在の設定でデプロイを行います。`,
+                "text": `<@${payload.event.user}>  環境:production に 現在の設定でデプロイを行います。`,
                 "attachments": [
                     {
                         "text": "本番にデプロイしてよろしいですか？",

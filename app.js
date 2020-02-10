@@ -130,8 +130,9 @@ const onRequest = async (req, res) => {
 
         if (mentsion.includes('本番') && mentsion.includes('デプロイ')) {
             const o = {
-                "text": `<@${payload.event.user}>  環境:production に 現在の設定でデプロイを行います。`,
-                "attachments": [
+                text: `<@${payload.event.user}>  環境:production に 現在の設定でデプロイを行います。`,
+                channel: payload.event.channel,
+                attachments: [
                     {
                         "text": "本番にデプロイしてよろしいですか？",
                         "fallback": "You are unable to choose a game",
@@ -155,8 +156,9 @@ const onRequest = async (req, res) => {
                     }
                 ]
             }
+            const slackRes = await postMessage(o);
             return res.status(200)
-                .json(o);
+                .json(slackRes);
         }
     }
 
